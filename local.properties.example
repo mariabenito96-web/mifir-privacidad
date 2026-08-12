@@ -1,0 +1,9 @@
+# Copy this file to "local.properties" (same folder) and adjust the paths
+# to match your own machine. Flutter normally creates this file for you the
+# first time you run `flutter pub get` / `flutter run` in this project, so
+# you usually don't need to edit it by hand.
+sdk.dir=/Users/tu_usuario/Library/Android/sdk
+flutter.sdk=/Users/tu_usuario/development/flutter
+flutter.buildMode=debug
+flutter.versionName=1.0.0
+flutter.versionCode=1

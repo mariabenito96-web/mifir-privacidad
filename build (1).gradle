@@ -1,0 +1,101 @@
+plugins {
+    id "com.android.application"
+    id "kotlin-android"
+    id "dev.flutter.flutter-gradle-plugin"
+}
+
+def localProperties = new Properties()
+def localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.withReader("UTF-8") { reader ->
+        localProperties.load(reader)
+    }
+}
+
+def flutterVersionCode = localProperties.getProperty("flutter.versionCode")
+if (flutterVersionCode == null) {
+    flutterVersionCode = "1"
+}
+
+def flutterVersionName = localProperties.getProperty("flutter.versionName")
+if (flutterVersionName == null) {
+    flutterVersionName = "1.0.0"
+}
+
+// Firma de release: lee android/key.properties si existe (el workflow de
+// GitHub Actions lo genera a partir de tus secrets, ver README). Si no
+// existe (por ejemplo un build local sin configurar), se usa la firma de
+// debug para que `flutter build` no falle.
+def keystorePropertiesFile = rootProject.file("key.properties")
+def keystoreProperties = new Properties()
+def hasReleaseSigning = keystorePropertiesFile.exists()
+if (hasReleaseSigning) {
+    keystorePropertiesFile.withReader("UTF-8") { reader ->
+        keystoreProperties.load(reader)
+    }
+}
+
+android {
+    namespace = "com.mariabenitonutricion.fir_test"
+    compileSdk = 36
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = JavaVersion.VERSION_17
+    }
+
+    defaultConfig {
+        // Bundle ID used to publish this app on Google Play. Change it to
+        // your own reverse-domain identifier before publishing.
+        applicationId "com.mariabenitonutricion.fir_test"
+        minSdk 23 // Firebase (ranking online) requiere Android 6.0 (API 23) o superior
+        targetSdk 36 // Play Store exige API 36 (Android 16) desde el 31/08/2026
+        versionCode flutterVersionCode.toInteger()
+        versionName flutterVersionName
+    }
+
+    signingConfigs {
+        release {
+            if (hasReleaseSigning) {
+                keyAlias keystoreProperties["keyAlias"]
+                keyPassword keystoreProperties["keyPassword"]
+                storeFile keystoreProperties["storeFile"] ? file(keystoreProperties["storeFile"]) : null
+                storePassword keystoreProperties["storePassword"]
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            // Usa tu propia clave de release si android/key.properties existe
+            // (lo genera el workflow de GitHub Actions); si no, cae en la
+            // firma de debug para que el build no falle.
+            signingConfig hasReleaseSigning ? signingConfigs.release : signingConfigs.debug
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
+            // Incluye los símbolos de depuración nativos directamente en el
+            // App Bundle, para que Play Console pueda analizar mejor los
+            // fallos/ANR sin tener que subir un archivo aparte.
+            ndk {
+                debugSymbolLevel "FULL"
+            }
+        }
+    }
+}
+
+flutter {
+    source = "../.."
+}
+
+// El plugin de Firebase (google-services) solo se aplica si ya has añadido
+// tu propio android/app/google-services.json (descargado de tu proyecto de
+// Firebase). Hasta entonces la app compila igual, simplemente sin ranking
+// online. Ver la guía de configuración de Firebase en el README.
+if (file("google-services.json").exists()) {
+    apply plugin: "com.google.gms.google-services"
+}
